@@ -83,13 +83,30 @@ balls = [ball1, ball2, ball3]
 #########
 
 while not rl.window_should_close():
+    
+    for ball in balls:
+        ball.update(floor)
+
+    for i in range(len(balls)):
+        for j in range(i + 1, len(balls)):
+            b1 = balls[i]
+            b2 = balls[j]
+
+            dx = b2.x - b1.x
+            dy = b2.y - b1.y
+
+            distance = math.sqrt(dx**2 + dy**2)
+
+            if (distance < b1.radius + b2.radius):
+                b1.velocity_x, b2.velocity_x = b2.velocity_x, b1.velocity_x
+                b1.velocity_y, b2.velocity_y = b2.velocity_y, b1.velocity_y
+
     rl.begin_drawing()
     rl.clear_background(rl.RAYWHITE)
+
     floor.draw()
-    
     for i in balls:
         i.draw()
-        i.update(floor)
 
     rl.end_drawing()
 
