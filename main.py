@@ -5,6 +5,22 @@
 import raylibpy as rl
 import math
 
+########
+# WALL #
+########
+
+class Wall:
+
+    def __init__(self, x, y, w, h, color) -> None:
+        self.x = x
+        self.y = y
+        self.width = w
+        self.height = h
+        self.color = color
+
+    def draw(self) -> None:
+        rl.draw_rectangle(self.x, self.y, self.width, self.height, self.color)
+
 #########
 # FLOOR #
 #########
@@ -45,24 +61,57 @@ class Ball:
     def draw(self) -> None:
         rl.draw_circle(self.x, self.y, self.radius, self.color)  
 
-    def update(self, floor=None) -> None:
+    def update(self, floors, walls) -> None:
         self.velocity_y += self.speed
         self.x += self.velocity_x
         self.y += self.velocity_y
-        if floor == None:    
-            y_pos = rl.get_screen_height()
-        else:
-            y_pos = floor.y
-        if self.y + self.radius >= y_pos:
-            self.y = y_pos - self.radius
-            self.velocity_y *= -0.8
+
+        #####################
+        # GLOBAL COLLISIONS #
+        #####################
+
         if self.x + self.radius >= rl.get_screen_width():
             self.x = rl.get_screen_width() - self.radius
             self.velocity_x *= -0.8
-        elif self.x - self.radius <= 0:
+        if self.x - self.radius <= 0:
             self.x = self.radius
             self.velocity_x *= -0.8
-        
+        if self.y + self.radius >= rl.get_screen_height():
+            self.y = rl.get_screen_height() - self.radius
+            self.velocity_y *= -0.8
+        if self.y - self.radius <= 0:
+            self.y = self.radius
+            self.velocity_y *= -0.8
+
+        ##########################
+        # LOCAL FLOOR COLLISIONS #
+        ##########################
+
+        for floor in floors:
+            within_x = self.x >= floor.x and self.x <= (floor.x + floor.width)
+
+            if within_x:
+                if self.y + self.radius >= floor.y and self.y - self.radius < floor.y:
+                    self.y = floor.y - self.radius
+                    self.velocity_y *= -0.8
+
+        #########################
+        # LOCAL WALL COLLISIONS #
+        #########################
+
+        for wall in walls:
+            within_y = self.y > wall.y and self.y < (wall.y + wall.height)
+            if within_y:
+                
+                if self.velocity_x > 0 and (self.x + self.radius >= wall.x and self.x < wall.x):
+                    self.x = wall.x - self.radius
+                    self.velocity_x *= -0.8
+                
+                if self.velocity_x < 0 and (self.x - self.radius <= (wall.x + wall.width) and self.x > wall.x + wall.width):
+                    self.x = (wall.x + wall.width) + self.radius
+                    self.velocity_x *= -0.8
+
+
 ###################
 # INITIALISATIONS #
 ###################
@@ -76,6 +125,10 @@ ball3 = Ball(600, 100, 1, rl.DARKGREEN, 0.25)
 
 floor = Floor(20, 500, 760, 20, rl.BLACK)
 
+wall = Wall(540, 0, 10, 500, rl.BLACK)
+
+floors = [floor]
+walls = [wall]
 balls = [ball1, ball2, ball3]
 
 #########
@@ -85,7 +138,7 @@ balls = [ball1, ball2, ball3]
 while not rl.window_should_close():
     
     for ball in balls:
-        ball.update(floor)
+        ball.update(floors, walls)
 
     for i in range(len(balls)):
         for j in range(i + 1, len(balls)):
@@ -105,6 +158,7 @@ while not rl.window_should_close():
     rl.clear_background(rl.RAYWHITE)
 
     floor.draw()
+    wall.draw()
     for i in balls:
         i.draw()
 
